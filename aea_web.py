@@ -6,15 +6,16 @@ import random
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="AEA", layout="wide", initial_sidebar_state="collapsed")
 
-# --- INICIALIZAR ESTADOS ---
+# --- INICIALIZAR ESTADOS (PARCHE ANTI-BUG: DOBLE MEMORIA) ---
 if "pantalla" not in st.session_state:
     st.session_state.pantalla = "inicio"
 if "history" not in st.session_state:
     st.session_state.history = []
 
 def guardar_historial():
-    if "df_matriz" in st.session_state:
-        st.session_state.history.append(st.session_state.df_matriz.copy())
+    # Ahora guardamos la matriz con todos tus números editados
+    if "matriz_actual" in st.session_state:
+        st.session_state.history.append(st.session_state.matriz_actual.copy())
         if len(st.session_state.history) > 5:
             st.session_state.history.pop(0)
 
@@ -232,10 +233,14 @@ elif st.session_state.pantalla == "motor":
     filas = col1.number_input("Filas", min_value=1, max_value=8, value=3)
     cols = col2.number_input("Columnas", min_value=1, max_value=8, value=4)
 
+    # --- LÓGICA DE DIMENSIONES (DOBLE MEMORIA) ---
     if "df_matriz" not in st.session_state:
-        st.session_state.df_matriz = pd.DataFrame([["0"] * cols for _ in range(filas)])
+        df_ini = pd.DataFrame([["0"] * cols for _ in range(filas)])
+        st.session_state.df_matriz = df_ini
+        st.session_state.matriz_actual = df_ini.copy()
     else:
-        old_df = st.session_state.df_matriz
+        # Usamos la memoria activa para no perder los números al cambiar dimensiones
+        old_df = st.session_state.matriz_actual
         old_f, old_c = old_df.shape
         if old_f != filas or old_c != cols:
             new_df = pd.DataFrame([["0"] * cols for _ in range(filas)])
@@ -244,6 +249,7 @@ elif st.session_state.pantalla == "motor":
                 for j in range(min_c):
                     new_df.iat[i, j] = old_df.iat[i, j]
             st.session_state.df_matriz = new_df
+            st.session_state.matriz_actual = new_df.copy()
 
     # --- ÁREA CENTRAL ---
     st.write("### 📝 Editor de Matriz")
@@ -251,11 +257,15 @@ elif st.session_state.pantalla == "motor":
     t1, t2, t3, t4 = st.columns(4)
     if t1.button("🧹 Limpiar Todo", use_container_width=True):
         guardar_historial()
-        st.session_state.df_matriz = pd.DataFrame([["0"] * cols for _ in range(filas)])
+        new_df = pd.DataFrame([["0"] * cols for _ in range(filas)])
+        st.session_state.df_matriz = new_df
+        st.session_state.matriz_actual = new_df.copy()
         st.rerun()
     if t2.button("🎲 Aleatorio", use_container_width=True):
         guardar_historial()
-        st.session_state.df_matriz = pd.DataFrame([[str(random.randint(-9, 9)) for _ in range(cols)] for _ in range(filas)])
+        new_df = pd.DataFrame([[str(random.randint(-9, 9)) for _ in range(cols)] for _ in range(filas)])
+        st.session_state.df_matriz = new_df
+        st.session_state.matriz_actual = new_df.copy()
         st.rerun()
     if t3.button("ℹ️ Identidad", use_container_width=True):
         guardar_historial()
@@ -263,19 +273,23 @@ elif st.session_state.pantalla == "motor":
         for i in range(min(filas, cols)):
             new_df.iat[i, i] = "1"
         st.session_state.df_matriz = new_df
+        st.session_state.matriz_actual = new_df.copy()
         st.rerun()
     if t4.button("↩️ Retroceder", use_container_width=True):
         if st.session_state.history:
-            st.session_state.df_matriz = st.session_state.history.pop()
+            prev_df = st.session_state.history.pop()
+            st.session_state.df_matriz = prev_df
+            st.session_state.matriz_actual = prev_df.copy()
             st.rerun()
         else:
             st.toast("No hay más acciones para deshacer 🛑")
 
     df_editado = st.data_editor(st.session_state.df_matriz, use_container_width=True)
-    st.session_state.df_matriz = df_editado
+    
+    # El gran fix: Guardar los cambios silenciosamente sin sobreescribir violentamente al editor
+    st.session_state.matriz_actual = df_editado.copy()
 
     # --- MOTOR DE CÁLCULO ---
-    # AQUÍ SE CORRIGIÓ EL BOTÓN PARA QUE ESTÉ A LA IZQUIERDA Y SUTIL
     col_calc1, col_calc2 = st.columns([1.5, 4])
     with col_calc1:
         btn_calcular = st.button("🚀 CALCULAR RESULTADO", type="primary", use_container_width=True)
