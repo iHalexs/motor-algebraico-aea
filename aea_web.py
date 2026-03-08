@@ -13,7 +13,6 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 def guardar_historial():
-    # Ahora guardamos la matriz con todos tus números editados
     if "matriz_actual" in st.session_state:
         st.session_state.history.append(st.session_state.matriz_actual.copy())
         if len(st.session_state.history) > 5:
@@ -58,15 +57,17 @@ def obtener_pasos_gauss_jordan(matriz_inicial):
 # ==========================================
 if st.session_state.pantalla == "inicio":
     
-    # CSS EXCLUSIVO DE INICIO (Oculta todo lo feo y estiliza el botón)
     st.markdown("""
     <style>
-    /* Ocultar barra superior y menú hamburguesa de Streamlit */
     header {visibility: hidden;}
     [data-testid="collapsedControl"] {display: none;}
     footer {visibility: hidden;}
     
-    /* Animación del Logo */
+    /* --- AQUÍ ESTÁ LA MAGIA PARA OCULTAR LOS LINKS EN EL INICIO TAMBIÉN --- */
+    h1 a, h2 a, h3 a, h4 a, h5 a, h6 a, a.header-anchor {
+        display: none !important;
+    }
+    
     .anim-container {
         text-align: center; font-family: "Arial Black", sans-serif; font-size: 6rem;
         font-weight: bold; cursor: pointer; position: relative; height: 180px;
@@ -88,7 +89,6 @@ if st.session_state.pantalla == "inicio":
     @keyframes typing { from { width: 0; } to { width: 100%; } }
     @keyframes blinkCursor { 0%, 100% { border-right-color: transparent; } 50% { border-right-color: #2680C2; } }
     
-    /* Botón de ingreso súper limpio (misterioso) */
     .stButton>button {
         background-color: transparent !important;
         border: 2px solid transparent !important;
@@ -136,10 +136,9 @@ if st.session_state.pantalla == "inicio":
 # ==========================================
 elif st.session_state.pantalla == "motor":
     
-    # CSS DEL EFECTO TELÓN Y ESTILOS DEL MOTOR
     st.markdown("""
     <style>
-    /* Efecto Telón que se abre al cargar la página */
+    /* Efecto Telón */
     .curtain {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         pointer-events: none; z-index: 999999; display: flex;
@@ -156,10 +155,13 @@ elif st.session_state.pantalla == "motor":
         100% { transform: scaleX(0); }
     }
     
-    /* Volver a mostrar los menús de Streamlit que ocultamos en el inicio */
     [data-testid="collapsedControl"] {display: block;}
     
-    /* Logo pequeño en la cabecera */
+    /* Ocultar links de títulos en el Motor */
+    h1 a, h2 a, h3 a, h4 a, h5 a, h6 a, a.header-anchor {
+        display: none !important;
+    }
+    
     .mini-logo {
         text-align: left; font-family: "Arial Black", sans-serif; font-size: 2.5rem;
         font-weight: bold; margin-bottom: 20px;
@@ -195,7 +197,6 @@ elif st.session_state.pantalla == "motor":
     .anim-container-motor:hover .algebra-text-motor {
         animation: typing-m 0.6s steps(7, end) forwards, blink-m 0.8s infinite;
     }
-    /* AQUÍ SE CORRIGIÓ EL ANCHO DE LA ANIMACIÓN PARA QUE SALGA LA PALABRA COMPLETA */
     @keyframes typing-m { from { width: 0; } to { width: 260px; } }
     @keyframes blink-m { 0%, 100% { border-right-color: transparent; } 50% { border-right-color: #2680C2; } }
     .suffix-motor {
@@ -239,7 +240,6 @@ elif st.session_state.pantalla == "motor":
         st.session_state.df_matriz = df_ini
         st.session_state.matriz_actual = df_ini.copy()
     else:
-        # Usamos la memoria activa para no perder los números al cambiar dimensiones
         old_df = st.session_state.matriz_actual
         old_f, old_c = old_df.shape
         if old_f != filas or old_c != cols:
@@ -286,7 +286,6 @@ elif st.session_state.pantalla == "motor":
 
     df_editado = st.data_editor(st.session_state.df_matriz, use_container_width=True)
     
-    # El gran fix: Guardar los cambios silenciosamente sin sobreescribir violentamente al editor
     st.session_state.matriz_actual = df_editado.copy()
 
     # --- MOTOR DE CÁLCULO ---
